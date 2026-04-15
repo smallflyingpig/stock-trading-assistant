@@ -530,7 +530,7 @@
                     <div class="live-dot"></div>
                     <span>LIVE</span>
                 </div>
-                <button class="refresh-btn" onclick="location.reload()">
+                <button class="refresh-btn" onclick="fetch('/api/refresh').then(()=>location.reload())">
                     <span>⟳</span>
                     <span>刷新数据</span>
                 </button>
