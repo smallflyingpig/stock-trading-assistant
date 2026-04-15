@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>持仓分析 - 股票交易助手</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 20px; color: #1976d2; text-decoration: none; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #1976d2; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #1565c0; }
+        .result { margin-top: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .profit { color: #e53935; }
+        .loss { color: #43a047; }
+        .error { color: #e53935; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 持仓分析</h1>
+        <div class="nav">
+            <a href="/">行情看板</a>
+            <a href="/portfolio">持仓分析</a>
+        </div>
+
+        <form id="portfolioForm">
+            <div class="form-group">
+                <label for="holdings">持仓 (格式: 股票代码:股数:成本, ...)</label>
+                <input type="text" id="holdings" name="holdings" placeholder="例如: 0700.HK:500:350,AAPL:50:150,600519:100:1600">
+            </div>
+            <button type="submit">分析持仓</button>
+        </form>
+
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('portfolioForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/portfolio/analyze', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            if (data.error) {
+                resultDiv.innerHTML = '<p class="error">' + data.error + '</p>';
+            } else {
+                const analysis = data.analysis;
+                const advice = data.advice;
+                resultDiv.innerHTML = `
+                    <h3>持仓概览</h3>
+                    <p>总市值: ${analysis.total_value.toFixed(2)}</p>
+                    <p class="${analysis.total_pnl >= 0 ? 'profit' : 'loss'}">总盈亏: ${analysis.total_pnl.toFixed(2)} (${analysis.total_pnl_percent.toFixed(2)}%)</p>
+                    <h4>个股明细</h4>
+                    <pre>${JSON.stringify(analysis.holdings, null, 2)}</pre>
+                    <h4>建议</h4>
+                    <p>${advice.overall_action}</p>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
