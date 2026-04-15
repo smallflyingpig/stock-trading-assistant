@@ -1,5 +1,5 @@
 """Market trend analyzer for A/H/US markets."""
-from typing import Dict, Any
+from typing import Dict, Any, List
 from data_fetcher.yahoo_finance import YahooFinanceFetcher
 from data_fetcher.eastmoney import EastMoneyFetcher
 from data_fetcher.news_aggregator import NewsAggregator
@@ -33,6 +33,53 @@ class MarketTrendAnalyzer:
             return self._analyze_us_market()
         return {"error": "Invalid market"}
 
+    def get_market_news(self, market: str = "all", limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get latest market news from all sources.
+
+        Args:
+            market: "all", "a", "hk", or "us"
+            limit: Number of news items per source
+
+        Returns:
+            List of news articles with source and sentiment.
+        """
+        news_items = []
+
+        # Get news based on market
+        if market in ["all", "a"]:
+            eastmoney_news = self.news.search_news("A股 市场", source="eastmoney", limit=limit)
+            news_items.extend(eastmoney_news)
+
+        if market in ["all", "hk"]:
+            hk_news = self.news.search_news("港股 恒生", source="eastmoney", limit=limit)
+            news_items.extend(hk_news)
+
+        if market in ["all", "us"]:
+            us_news = self.news.search_news("美股 S&P", source="wsj", limit=limit)
+            news_items.extend(us_news)
+
+        return news_items[:limit]
+
+    def get_social_sentiment(self, keyword: str = "stock market") -> Dict[str, Any]:
+        """
+        Get social media sentiment for market.
+
+        Args:
+            keyword: Search keyword
+
+        Returns:
+            Dict with sentiment data from X.com and Truth Social.
+        """
+        twitter_sentiment = self.social.get_market_sentiment(keyword)
+        truth_social_posts = self.social.get_truth_social_posts(keyword, limit=5)
+
+        return {
+            "twitter": twitter_sentiment,
+            "truth_social": truth_social_posts,
+            "keyword": keyword,
+        }
+
     def _analyze_a_share(self) -> Dict[str, Any]:
         """Analyze A-share market."""
         indices = self.eastmoney.get_market_indices()
@@ -58,7 +105,7 @@ class MarketTrendAnalyzer:
     def _analyze_hk_market(self) -> Dict[str, Any]:
         """Analyze HK market."""
         indices_data = []
-        for symbol in ["^HSI"]:  # ^HSTECH may not be available
+        for symbol in ["^HSI"]:
             idx = self.yahoo.get_market_index(symbol)
             if idx:
                 indices_data.append(idx)

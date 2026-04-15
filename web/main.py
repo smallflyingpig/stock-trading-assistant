@@ -14,17 +14,23 @@ templates = Jinja2Templates(directory="web/templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Main dashboard page."""
+    """Main dashboard page with market data, news, and social sentiment."""
     market_analyzer = MarketTrendAnalyzer()
     a_share = market_analyzer.analyze_market("a")
     hk = market_analyzer.analyze_market("hk")
     us = market_analyzer.analyze_market("us")
+
+    # Get news and social sentiment
+    news = market_analyzer.get_market_news("all", limit=15)
+    social_sentiment = market_analyzer.get_social_sentiment("stock market")
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "a_share": a_share,
         "hk": hk,
         "us": us,
+        "news": news,
+        "social_sentiment": social_sentiment,
     })
 
 

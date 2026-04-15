@@ -23,15 +23,12 @@
             --accent-neutral: #6366f1;
             --accent-neutral-glow: rgba(99, 102, 241, 0.15);
             --accent-gold: #fbbf24;
+            --accent-gold-glow: rgba(251, 191, 36, 0.15);
             --font-mono: 'JetBrains Mono', monospace;
             --font-sans: 'Outfit', sans-serif;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: var(--font-sans);
@@ -41,14 +38,10 @@
             overflow-x: hidden;
         }
 
-        /* Background grid pattern */
         body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background-image:
                 linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
@@ -99,9 +92,7 @@
             letter-spacing: -0.5px;
         }
 
-        .logo-text span {
-            color: var(--accent-neutral);
-        }
+        .logo-text span { color: var(--accent-neutral); }
 
         .header-right {
             display: flex;
@@ -179,9 +170,7 @@
         .market-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 3px;
             background: var(--card-accent);
             opacity: 0.8;
@@ -267,9 +256,7 @@
             transition: background 0.2s ease;
         }
 
-        .index-item:hover {
-            background: var(--bg-card-hover);
-        }
+        .index-item:hover { background: var(--bg-card-hover); }
 
         .index-name {
             font-size: 13px;
@@ -298,14 +285,194 @@
             text-align: center;
         }
 
-        .index-change.positive {
-            background: var(--accent-bull-glow);
-            color: var(--accent-bull);
+        .index-change.positive { background: var(--accent-bull-glow); color: var(--accent-bull); }
+        .index-change.negative { background: var(--accent-bear-glow); color: var(--accent-bear); }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .index-change.negative {
-            background: var(--accent-bear-glow);
-            color: var(--accent-bear);
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* News & Social Section */
+        .data-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .data-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        /* News Feed */
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .news-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .news-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(4px);
+        }
+
+        .news-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .news-icon.caixin { background: linear-gradient(135deg, #e53935, #ff7043); }
+        .news-icon.wsj { background: linear-gradient(135deg, #0a3d5c, #1488cc); }
+        .news-icon.eastmoney { background: linear-gradient(135deg, #ff6b6b, #ffd93d); }
+        .news-icon.twitter { background: linear-gradient(135deg, #1da1f2, #657786); }
+        .news-icon.truth { background: linear-gradient(135deg, #00d4a1, #00a86b); }
+
+        .news-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .news-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .news-source {
+            font-weight: 500;
+        }
+
+        /* Social Sentiment */
+        .sentiment-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .sentiment-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .sentiment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .sentiment-platform {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .sentiment-icon {
+            font-size: 20px;
+        }
+
+        .sentiment-badge {
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .sentiment-badge.positive { background: var(--accent-bull-glow); color: var(--accent-bull); }
+        .sentiment-badge.negative { background: var(--accent-bear-glow); color: var(--accent-bear); }
+        .sentiment-badge.neutral { background: var(--accent-neutral-glow); color: var(--accent-neutral); }
+
+        .sentiment-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .sentiment-stat {
+            text-align: center;
+        }
+
+        .sentiment-stat-value {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sentiment-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sentiment-posts {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sentiment-post {
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
 
         /* Navigation */
@@ -314,15 +481,6 @@
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
-        }
-
-        .nav-header {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
         }
 
         .nav-links {
@@ -350,21 +508,13 @@
             box-shadow: 0 0 24px var(--accent-neutral-glow);
         }
 
-        .nav-link-icon {
-            font-size: 18px;
-        }
+        .nav-link-icon { font-size: 18px; }
 
         /* Responsive */
         @media (max-width: 900px) {
-            .market-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 20px;
-                align-items: flex-start;
-            }
+            .market-grid { grid-template-columns: 1fr; }
+            .data-section { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 20px; align-items: flex-start; }
         }
     </style>
 </head>
@@ -387,6 +537,7 @@
             </div>
         </header>
 
+        <!-- Market Cards -->
         <div class="market-grid">
             <!-- A-Share -->
             <div class="market-card a-share">
@@ -411,6 +562,19 @@
                                 {{ "%+.2f"|format(idx.change_percent) }}%
                             </span>
                         </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if a_share.hot_sectors %}
+                <div style="margin-top: 20px;">
+                    <div class="section-title" style="margin-bottom: 12px;">热门板块</div>
+                    {% for sector in a_share.hot_sectors[:3] %}
+                    <div class="index-item">
+                        <span class="index-name">{{ sector.name }}</span>
+                        <span class="index-change {% if sector.net_inflow > 0 %}positive{% else %}negative{% endif %}" style="font-size: 11px;">
+                            {{ "%.1f"|format(sector.net_inflow / 100000000) }}亿
+                        </span>
                     </div>
                     {% endfor %}
                 </div>
@@ -485,8 +649,105 @@
             </div>
         </div>
 
+        <!-- News & Social Sentiment -->
+        <div class="section-title">📰 市场资讯 & 社交情绪</div>
+        <div class="data-section">
+            <!-- News Feed -->
+            <div class="data-card">
+                <div class="section-title" style="margin-bottom: 20px;">最新新闻</div>
+                <div class="news-list">
+                    {% if news %}
+                    {% for item in news[:10] %}
+                    <div class="news-item">
+                        <div class="news-icon {{ item.source }}">
+                            {% if item.source == 'caixin' %}📰{% elif item.source == 'wsj' %}🌍{% elif item.source == 'eastmoney' %}📊{% else %}📱{% endif %}
+                        </div>
+                        <div class="news-content">
+                            <div class="news-title">{{ item.title }}</div>
+                            <div class="news-meta">
+                                <span class="news-source">{{ item.source|upper }}</span>
+                                {% if item.time %}<span>{{ item.time }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="news-item">
+                        <div class="news-icon eastmoney">📊</div>
+                        <div class="news-content">
+                            <div class="news-title">暂无新闻数据 - API配置后可见</div>
+                            <div class="news-meta"><span class="news-source">系统</span></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Social Sentiment -->
+            <div class="data-card">
+                <div class="section-title" style="margin-bottom: 20px;">社交媒体情绪</div>
+                <div class="sentiment-grid">
+                    {% if social_sentiment and social_sentiment.twitter %}
+                    <div class="sentiment-item">
+                        <div class="sentiment-header">
+                            <span class="sentiment-platform">
+                                <span class="sentiment-icon">𝕏</span>
+                                X.com
+                            </span>
+                            <span class="sentiment-badge {{ social_sentiment.twitter.sentiment }}">
+                                {{ social_sentiment.twitter.sentiment }}
+                            </span>
+                        </div>
+                        <div class="sentiment-stats">
+                            <div class="sentiment-stat">
+                                <div class="sentiment-stat-value">{{ social_sentiment.twitter.tweet_count }}</div>
+                                <div class="sentiment-stat-label">推文数</div>
+                            </div>
+                            <div class="sentiment-stat">
+                                <div class="sentiment-stat-value">{{ "%.0f"|format(social_sentiment.twitter.avg_engagement) }}</div>
+                                <div class="sentiment-stat-label">平均互动</div>
+                            </div>
+                        </div>
+                        {% if social_sentiment.twitter.data_source == 'twitter' %}
+                        <div class="sentiment-posts">
+                            <div class="sentiment-post">📊 情绪数据已通过X.com API获取</div>
+                        </div>
+                        {% else %}
+                        <div class="sentiment-posts">
+                            <div class="sentiment-post">🔑 需要X.com API密钥以获取完整数据</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="sentiment-item">
+                        <div class="sentiment-header">
+                            <span class="sentiment-platform">
+                                <span class="sentiment-icon">📱</span>
+                                Truth Social
+                            </span>
+                            <span class="sentiment-badge neutral">LIMITED</span>
+                        </div>
+                        <div class="sentiment-stats">
+                            <div class="sentiment-stat">
+                                <div class="sentiment-stat-value">-</div>
+                                <div class="sentiment-stat-label">帖子数</div>
+                            </div>
+                            <div class="sentiment-stat">
+                                <div class="sentiment-stat-value">-</div>
+                                <div class="sentiment-stat-label">情绪</div>
+                            </div>
+                        </div>
+                        <div class="sentiment-posts">
+                            <div class="sentiment-post">⚠️ Truth Social公开API访问受限</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
         <div class="nav-section">
-            <div class="nav-header">快捷导航</div>
             <div class="nav-links">
                 <a href="/" class="nav-link">
                     <span class="nav-link-icon">📈</span>

@@ -1,5 +1,7 @@
 """News aggregator for Chinese and international financial news."""
 import requests
+import re
+import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -19,99 +21,187 @@ class NewsAggregator:
 
         Args:
             keyword: Search keyword
-            source: "caixin", "wsj", "eastmoney", or "all"
+            source: "caixin", "wsj", "eastmoney", "bloomberg", "ft", or "all"
             limit: Maximum number of results
 
         Returns:
             List of news articles.
         """
-        if source == "caixin" or source == "all":
-            return self._search_caixin(keyword, limit)
-        elif source == "wsj" or source == "all":
-            return self._search_wsj(keyword, limit)
-        elif source == "eastmoney" or source == "all":
-            return self._search_eastmoney(keyword, limit)
-        return []
+        results = []
+        if source in ["eastmoney", "all"]:
+            results.extend(self._get_eastmoney_news(limit))
+        if source in ["bloomberg", "all"]:
+            results.extend(self._get_bloomberg_news(limit))
+        if source in ["ft", "all"]:
+            results.extend(self._get_ft_news(limit))
+        if source in ["yahoo", "all"]:
+            results.extend(self._get_yahoo_news(keyword, limit))
+        if source in ["wsj", "all"]:
+            results.extend(self._get_wsj_news(keyword, limit))
+        if source in ["caixin", "all"]:
+            results.extend(self._get_caixin_news(keyword, limit))
+        return results[:limit]
 
-    def _search_caixin(self, keyword: str, limit: int) -> List[Dict[str, Any]]:
-        """Search Caixin news."""
+    def _get_eastmoney_news(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get real-time news from EastMoney."""
         try:
-            url = "https://gateway.caixin.com/api/search/searchAll"
-            params = {
-                "query": keyword,
-                "page": 1,
-                "size": limit,
-                "type": "article",
-            }
-            resp = self.session.get(url, params=params, timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
-                articles = []
-                for item in data.get("data", {}).get("list", [])[:limit]:
+            url = "https://newsapi.eastmoney.com/kuaixun/v1/getlist_101_ajaxResult_50_1_.html"
+            resp = self.session.get(url, timeout=10)
+            text = resp.text.strip()
+
+            match = re.search(r'var ajaxResult=(.+)', text)
+            if not match:
+                return []
+
+            data = json.loads(match.group(1))
+            articles = []
+            for item in data.get("LivesList", [])[:limit]:
+                articles.append({
+                    "source": "eastmoney",
+                    "title": item.get("title", ""),
+                    "url": item.get("url_w", ""),
+                    "time": item.get("showtime", ""),
+                    "summary": "",
+                })
+            return articles
+        except Exception as e:
+            print(f"Error fetching EastMoney news: {e}")
+            return []
+
+    def _get_bloomberg_news(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get Bloomberg Markets news."""
+        try:
+            url = "https://feeds.bloomberg.com/markets/news.rss"
+            resp = self.session.get(url, timeout=10)
+            if resp.status_code != 200:
+                return []
+
+            items = re.findall(r'<item>(.*?)</item>', resp.text, re.DOTALL)
+            articles = []
+            for item in items[:limit]:
+                title = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>', item)
+                link = re.search(r'<link>(.*?)</link>', item)
+                pubdate = re.search(r'<pubDate>(.*?)</pubDate>', item)
+                if title:
                     articles.append({
-                        "source": "caixin",
-                        "title": item.get("title", ""),
-                        "url": item.get("url", ""),
-                        "time": item.get("time", ""),
-                        "summary": item.get("summary", ""),
+                        "source": "bloomberg",
+                        "title": title.group(1).strip(),
+                        "url": link.group(1).strip() if link else "#",
+                        "time": pubdate.group(1).strip()[:16] if pubdate else "",
+                        "summary": "",
                     })
+            return articles
+        except Exception as e:
+            print(f"Error fetching Bloomberg news: {e}")
+            return []
+
+    def _get_ft_news(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get Financial Times news."""
+        try:
+            url = "https://www.ft.com/rss/home"
+            resp = self.session.get(url, timeout=10)
+            if resp.status_code != 200:
+                return []
+
+            items = re.findall(r'<item>(.*?)</item>', resp.text, re.DOTALL)
+            articles = []
+            for item in items[:limit]:
+                title = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>', item)
+                link = re.search(r'<link>(.*?)</link>', item)
+                pubdate = re.search(r'<pubDate>(.*?)</pubDate>', item)
+                if title:
+                    articles.append({
+                        "source": "ft",
+                        "title": title.group(1).strip(),
+                        "url": link.group(1).strip() if link else "#",
+                        "time": pubdate.group(1).strip()[:16] if pubdate else "",
+                        "summary": "",
+                    })
+            return articles
+        except Exception as e:
+            print(f"Error fetching FT news: {e}")
+            return []
+
+    def _get_yahoo_news(self, keyword: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get finance news from Yahoo Finance."""
+        try:
+            url = "https://finance.yahoo.com/markets/news/"
+            resp = self.session.get(url, timeout=10)
+
+            articles = []
+            script_pattern = r'"heading":"([^"]+)","imageUrl"'
+            headings = re.findall(script_pattern, resp.text[:500000])[:limit]
+            for h in headings:
+                articles.append({
+                    "source": "yahoo",
+                    "title": h[:200],
+                    "url": "#",
+                    "time": "",
+                    "summary": "",
+                })
+            return articles
+        except Exception as e:
+            print(f"Error fetching Yahoo news: {e}")
+            return []
+
+    def _get_wsj_news(self, keyword: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get WSJ news via CNBC alternative."""
+        try:
+            # CNBC Tech/Gadgets RSS as WSJ alternative
+            url = "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+            resp = self.session.get(url, timeout=10)
+            if resp.status_code != 200:
+                return []
+
+            items = re.findall(r'<item>(.*?)</item>', resp.text, re.DOTALL)
+            articles = []
+            for item in items[:limit]:
+                title = re.search(r'<title>(.*?)</title>', item)
+                link = re.search(r'<link>(.*?)</link>', item)
+                pubdate = re.search(r'<pubDate>(.*?)</pubDate>', item)
+                if title:
+                    articles.append({
+                        "source": "cnbc",
+                        "title": title.group(1).strip(),
+                        "url": link.group(1).strip() if link else "#",
+                        "time": pubdate.group(1).strip()[:16] if pubdate else "",
+                        "summary": "",
+                    })
+            return articles
+        except Exception as e:
+            print(f"Error fetching WSJ news: {e}")
+            return []
+
+    def _get_caixin_news(self, keyword: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get Caixin news via direct scraping."""
+        try:
+            url = f"https://www.caixinglobal.com/rss/{keyword if keyword else 'business'}.xml"
+            resp = self.session.get(url, timeout=10)
+            if resp.status_code == 200 and len(resp.text) > 100:
+                items = re.findall(r'<item>(.*?)</item>', resp.text, re.DOTALL)
+                articles = []
+                for item in items[:limit]:
+                    title = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>', item)
+                    link = re.search(r'<link>(.*?)</link>', item)
+                    pubdate = re.search(r'<pubDate>(.*?)</pubDate>', item)
+                    if title:
+                        articles.append({
+                            "source": "caixin",
+                            "title": title.group(1).strip(),
+                            "url": link.group(1).strip() if link else "#",
+                            "time": pubdate.group(1).strip()[:16] if pubdate else "",
+                            "summary": "",
+                        })
                 return articles
             return []
         except Exception as e:
-            print(f"Error searching Caixin: {e}")
-            return []
-
-    def _search_wsj(self, keyword: str, limit: int) -> List[Dict[str, Any]]:
-        """Search WSJ news."""
-        try:
-            url = "https://www.wsj.com/search/term.html"
-            params = {
-                "keyword": keyword,
-            }
-            resp = self.session.get(url, params=params, timeout=10)
-            if resp.status_code == 200:
-                return [{
-                    "source": "wsj",
-                    "title": f"WSJ: {keyword}",
-                    "url": resp.url,
-                    "time": datetime.now().isoformat(),
-                }]
-            return []
-        except Exception as e:
-            print(f"Error searching WSJ: {e}")
-            return []
-
-    def _search_eastmoney(self, keyword: str, limit: int) -> List[Dict[str, Any]]:
-        """Search EastMoney news."""
-        try:
-            url = "https://search-api-web.eastmoney.com/search/jsonp"
-            json_param = '{"uid":"","keyword":"' + keyword + '","type":["cmsArticle"],"client":"web","clientType":"pc","clientVersion":"curr","param":{"searchScope":"default","sort":"default","pageIndex":1,"pageSize":' + str(limit) + ',"preTag":"<em>","postTag":"</em>"}}'
-            params = {"param": json_param}
-            resp = self.session.get(url, params=params, timeout=10)
-            if resp.status_code == 200:
-                return [{
-                    "source": "eastmoney",
-                    "title": f"东方财富: {keyword}",
-                    "url": "",
-                    "time": datetime.now().isoformat(),
-                }]
-            return []
-        except Exception as e:
-            print(f"Error searching EastMoney: {e}")
+            print(f"Error fetching Caixin news: {e}")
             return []
 
     def get_stock_news(self, symbol: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get news related to a specific stock.
-
-        Args:
-            symbol: Stock symbol (e.g., "0700.HK", "600519", "AAPL")
-            limit: Maximum number of results
-
-        Returns:
-            List of news articles.
         """
-        # Map symbol to company name for search
         symbol_map = {
             "0700.HK": "腾讯",
             "9988.HK": "阿里巴巴",
