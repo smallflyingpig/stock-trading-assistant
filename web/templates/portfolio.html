@@ -3,70 +3,511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>持仓分析 - 股票交易助手</title>
+    <title>持仓分析 | Trading Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 20px; color: #1976d2; text-decoration: none; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #1976d2; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; }
-        button:hover { background: #1565c0; }
-        .result { margin-top: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .profit { color: #e53935; }
-        .loss { color: #43a047; }
-        .error { color: #e53935; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
+        :root {
+            --bg-primary: #0a0b0f;
+            --bg-secondary: #12141c;
+            --bg-card: #161923;
+            --bg-card-hover: #1c202d;
+            --border: #2a2e3d;
+            --text-primary: #e8eaed;
+            --text-secondary: #8b8f9c;
+            --text-muted: #5c6170;
+            --accent-bull: #00d4a1;
+            --accent-bull-glow: rgba(0, 212, 161, 0.15);
+            --accent-bear: #ff6b6b;
+            --accent-bear-glow: rgba(255, 107, 107, 0.15);
+            --accent-neutral: #6366f1;
+            --accent-neutral-glow: rgba(99, 102, 241, 0.15);
+            --accent-gold: #fbbf24;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Outfit', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-neutral) 0%, #818cf8 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span { color: var(--accent-neutral); }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-neutral);
+        }
+
+        .nav-link.active {
+            background: var(--accent-neutral-glow);
+            border-color: var(--accent-neutral);
+            color: var(--accent-neutral);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-neutral);
+            box-shadow: 0 0 0 3px var(--accent-neutral-glow);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px 32px;
+            margin-top: 20px;
+            background: linear-gradient(135deg, var(--accent-neutral) 0%, #818cf8 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--accent-neutral-glow);
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            display: none;
+        }
+
+        .result-card.visible { display: block; }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .summary-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .summary-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .summary-value.positive { color: var(--accent-bull); }
+        .summary-value.negative { color: var(--accent-bear); }
+        .summary-value.neutral { color: var(--text-primary); }
+
+        .holdings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .holding-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .holding-item:hover { background: var(--bg-card-hover); }
+
+        .holding-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .holding-symbol {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .holding-shares {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .holding-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .holding-price {
+            text-align: right;
+        }
+
+        .holding-current {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .holding-cost {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .holding-pnl {
+            text-align: right;
+            min-width: 100px;
+        }
+
+        .holding-pnl-value {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .holding-pnl-value.positive { color: var(--accent-bull); }
+        .holding-pnl-value.negative { color: var(--accent-bear); }
+
+        .holding-pnl-percent {
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+
+        .advice-section {
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--accent-neutral-glow);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+        }
+
+        .advice-label {
+            font-size: 11px;
+            color: var(--accent-neutral);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .advice-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .error-msg {
+            padding: 16px 20px;
+            background: var(--accent-bear-glow);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 10px;
+            color: var(--accent-bear);
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-msg.visible { display: block; }
+
+        @media (max-width: 600px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 20px; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 持仓分析</h1>
-        <div class="nav">
-            <a href="/">行情看板</a>
-            <a href="/portfolio">持仓分析</a>
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <div class="logo-text">Stock<span>Terminal</span></div>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">📈 行情看板</a>
+                <a href="/portfolio" class="nav-link active">💼 持仓分析</a>
+            </div>
+        </header>
+
+        <h1 class="page-title">持仓分析</h1>
+        <p class="page-subtitle">输入你的持仓，获取实时分析和建议</p>
+
+        <div class="form-card">
+            <label class="form-label">持仓信息</label>
+            <input type="text" id="holdings" class="form-input" placeholder="例如: 0700.HK:500:350,AAPL:50:150,600519:100:1600">
+            <p class="form-hint">格式：股票代码:股数:成本价，多个持仓用逗号分隔</p>
+
+            <div id="errorMsg" class="error-msg"></div>
+
+            <button type="submit" class="submit-btn" onclick="analyzePortfolio()">分析持仓</button>
         </div>
 
-        <form id="portfolioForm">
-            <div class="form-group">
-                <label for="holdings">持仓 (格式: 股票代码:股数:成本, ...)</label>
-                <input type="text" id="holdings" name="holdings" placeholder="例如: 0700.HK:500:350,AAPL:50:150,600519:100:1600">
+        <div id="resultCard" class="result-card">
+            <div class="result-header">
+                <span class="result-title">📊 持仓概览</span>
             </div>
-            <button type="submit">分析持仓</button>
-        </form>
 
-        <div id="result" class="result" style="display:none;"></div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">总市值</div>
+                    <div class="summary-value neutral" id="totalValue">-</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">总盈亏</div>
+                    <div class="summary-value" id="totalPnl">-</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">盈亏比例</div>
+                    <div class="summary-value" id="totalPnlPercent">-</div>
+                </div>
+            </div>
+
+            <div class="holdings-list" id="holdingsList"></div>
+
+            <div class="advice-section">
+                <div class="advice-label">💡 交易建议</div>
+                <div class="advice-text" id="adviceText">-</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.getElementById('portfolioForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const response = await fetch('/portfolio/analyze', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            if (data.error) {
-                resultDiv.innerHTML = '<p class="error">' + data.error + '</p>';
-            } else {
+        async function analyzePortfolio() {
+            const holdingsInput = document.getElementById('holdings').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const resultCard = document.getElementById('resultCard');
+
+            if (!holdingsInput) {
+                errorMsg.textContent = '请输入持仓信息';
+                errorMsg.classList.add('visible');
+                resultCard.classList.remove('visible');
+                return;
+            }
+
+            errorMsg.classList.remove('visible');
+
+            const formData = new FormData();
+            formData.append('holdings', holdingsInput);
+
+            try {
+                const response = await fetch('/portfolio/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    errorMsg.textContent = data.error;
+                    errorMsg.classList.add('visible');
+                    resultCard.classList.remove('visible');
+                    return;
+                }
+
                 const analysis = data.analysis;
                 const advice = data.advice;
-                resultDiv.innerHTML = `
-                    <h3>持仓概览</h3>
-                    <p>总市值: ${analysis.total_value.toFixed(2)}</p>
-                    <p class="${analysis.total_pnl >= 0 ? 'profit' : 'loss'}">总盈亏: ${analysis.total_pnl.toFixed(2)} (${analysis.total_pnl_percent.toFixed(2)}%)</p>
-                    <h4>个股明细</h4>
-                    <pre>${JSON.stringify(analysis.holdings, null, 2)}</pre>
-                    <h4>建议</h4>
-                    <p>${advice.overall_action}</p>
-                `;
+
+                // Update summary
+                document.getElementById('totalValue').textContent = formatCurrency(analysis.total_value, analysis.holdings[0]?.currency || 'USD');
+
+                const pnlEl = document.getElementById('totalPnl');
+                pnlEl.textContent = formatCurrency(analysis.total_pnl, analysis.holdings[0]?.currency || 'USD');
+                pnlEl.className = 'summary-value ' + (analysis.total_pnl >= 0 ? 'positive' : 'negative');
+
+                const pnlPctEl = document.getElementById('totalPnlPercent');
+                pnlPctEl.textContent = (analysis.total_pnl_percent >= 0 ? '+' : '') + analysis.total_pnl_percent.toFixed(2) + '%';
+                pnlPctEl.className = 'summary-value ' + (analysis.total_pnl_percent >= 0 ? 'positive' : 'negative');
+
+                // Update holdings list
+                const holdingsList = document.getElementById('holdingsList');
+                holdingsList.innerHTML = analysis.holdings.map(h => `
+                    <div class="holding-item">
+                        <div class="holding-left">
+                            <span class="holding-symbol">${h.symbol}</span>
+                            <span class="holding-shares">${h.shares} 股 @ ${h.cost_per_share} ${h.currency}</span>
+                        </div>
+                        <div class="holding-right">
+                            <div class="holding-price">
+                                <div class="holding-current">${h.current_price.toFixed(2)}</div>
+                                <div class="holding-cost">成本: ${h.cost_per_share}</div>
+                            </div>
+                            <div class="holding-pnl">
+                                <div class="holding-pnl-value ${h.pnl >= 0 ? 'positive' : 'negative'}">${h.pnl >= 0 ? '+' : ''}${h.pnl.toFixed(2)}</div>
+                                <div class="holding-pnl-percent ${h.pnl_percent >= 0 ? 'positive' : 'negative'}">${h.pnl_percent >= 0 ? '+' : ''}${h.pnl_percent.toFixed(2)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Update advice
+                document.getElementById('adviceText').textContent = advice.overall_action;
+
+                resultCard.classList.add('visible');
+
+            } catch (err) {
+                errorMsg.textContent = '请求失败: ' + err.message;
+                errorMsg.classList.add('visible');
+                resultCard.classList.remove('visible');
             }
-        };
+        }
+
+        function formatCurrency(value, currency) {
+            const symbols = { USD: '$', HKD: 'HK$', CNY: '¥' };
+            return (symbols[currency] || '$') + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
     </script>
 </body>
 </html>
