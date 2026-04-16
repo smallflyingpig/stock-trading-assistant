@@ -558,8 +558,8 @@
                         <span class="index-name">{{ name }}</span>
                         <div class="index-data">
                             <span class="index-price">{{ "%.2f"|format(idx.current_price) }}</span>
-                            <span class="index-change {% if idx.change_percent > 0 %}positive{% elif idx.change_percent < 0 %}negative{% endif %}">
-                                {{ "%+.2f"|format(idx.change_percent) }}%
+                            <span class="index-change {% if idx.market_closed %}neutral{% elif idx.change_percent > 0 %}positive{% elif idx.change_percent < 0 %}negative{% endif %}">
+                                {% if idx.market_closed %}昨收{% else %}{{ "%+.2f"|format(idx.change_percent) }}%{% endif %}
                             </span>
                         </div>
                     </div>
@@ -572,8 +572,8 @@
                     {% for sector in a_share.hot_sectors[:3] %}
                     <div class="index-item">
                         <span class="index-name">{{ sector.name }}</span>
-                        <span class="index-change {% if sector.net_inflow > 0 %}positive{% else %}negative{% endif %}" style="font-size: 11px;">
-                            {{ "%.1f"|format(sector.net_inflow / 100000000) }}亿
+                        <span class="index-change {% if (sector.net_inflow | float) > 0 %}positive{% else %}negative{% endif %}" style="font-size: 11px;">
+                            {{ "%.1f"|format((sector.net_inflow | float) / 100000000) }}亿
                         </span>
                     </div>
                     {% endfor %}

@@ -53,8 +53,11 @@ class EastMoneyFetcher:
             low = float(fields[34]) if len(fields) > 34 and fields[34] else 0
             name = fields[1] if len(fields) > 1 else symbol
 
+            # Detect pre-market: if open is 0 and current == prev_close, market hasn't opened
+            market_closed = (open_price == 0 and current_price == prev_close)
+
             change = current_price - prev_close
-            change_percent = (change / prev_close * 100) if prev_close else 0
+            change_percent = (change / prev_close * 100) if prev_close and not market_closed else 0
 
             return {
                 "symbol": symbol,
@@ -68,6 +71,7 @@ class EastMoneyFetcher:
                 "low": low,
                 "change": change,
                 "change_percent": change_percent,
+                "market_closed": market_closed,
             }
         except Exception as e:
             print(f"Error fetching A-share quote for {symbol}: {e}")
@@ -108,14 +112,17 @@ class EastMoneyFetcher:
 
                 current_price = float(fields[3]) if fields[3] else 0
                 prev_close = float(fields[4]) if fields[4] else 0
+                open_price = float(fields[5]) if fields[5] else 0
                 change = current_price - prev_close
-                change_percent = (change / prev_close * 100) if prev_close else 0
+                market_closed = (open_price == 0 and current_price == prev_close)
+                change_percent = (change / prev_close * 100) if prev_close and not market_closed else 0
 
                 result[name] = {
                     "symbol": secid,
                     "current_price": current_price,
                     "change": change,
                     "change_percent": change_percent,
+                    "market_closed": market_closed,
                 }
         except Exception as e:
             print(f"Error fetching market indices: {e}")

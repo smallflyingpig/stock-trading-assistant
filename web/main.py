@@ -23,7 +23,6 @@ def load_cached_data():
     try:
         conn = sqlite3.connect(DB_PATH)
         today = date.today().isoformat()
-        # Get latest market snapshots
         markets = {}
         for market in ["a-share", "hk", "us"]:
             row = conn.execute(
@@ -31,18 +30,24 @@ def load_cached_data():
                 (today, market)
             ).fetchone()
             if row:
-                markets[market] = json.loads(row[1])
+                markets[market] = json.loads(row[0])
 
-        # Get news
         row = conn.execute(
             "SELECT data FROM news_cache WHERE date=? ORDER BY created_at DESC LIMIT 1",
             (today,)
         ).fetchone()
         news = json.loads(row[0]) if row else []
-
         conn.close()
+
         if markets or news:
-            return {"markets": markets, "news": news}
+            return {
+                "a_share": markets.get("a-share", {}),
+                "hk": markets.get("hk", {}),
+                "us": markets.get("us", {}),
+                "news": news,
+                "social_sentiment": {"twitter": {"sentiment": "cached", "tweet_count": 0, "avg_engagement": 0, "data_source": "cache"}},
+                "from_cache": True,
+            }
     except Exception:
         pass
     return None
@@ -50,22 +55,14 @@ def load_cached_data():
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Main dashboard - shows cached data immediately, refresh in background."""
+    """Main dashboard - shows cached data immediately."""
     cached = load_cached_data()
-
-    # Return cached data for fast page load
     if cached:
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "a_share": cached["markets"].get("a-share", {}),
-            "hk": cached["markets"].get("hk", {}),
-            "us": cached["markets"].get("us", {}),
-            "news": cached.get("news", []),
-            "social_sentiment": {"twitter": {"sentiment": "cached", "tweet_count": 0, "avg_engagement": 0, "data_source": "cache"}},
-            "from_cache": True,
+            **cached,
         })
 
-    # No cache - return empty state (will populate on refresh)
     return templates.TemplateResponse("index.html", {
         "request": request,
         "a_share": {"trend": "unknown", "avg_change_percent": 0, "indices": {}},
@@ -79,14 +76,13 @@ async def index(request: Request):
 
 @app.get("/api/refresh")
 async def refresh_data():
-    """Fetch fresh data and return JSON (called by browser on page load)."""
+    """Fetch fresh data and return JSON."""
     analyzer = MarketTrendAnalyzer()
     a_share = analyzer.analyze_market("a")
     hk = analyzer.analyze_market("hk")
     us = analyzer.analyze_market("us")
     news = analyzer.get_market_news("all", limit=15)
     social = analyzer.get_social_sentiment("stock market")
-
     return JSONResponse({
         "a_share": a_share,
         "hk": hk,
@@ -105,7 +101,6 @@ async def portfolio(request: Request):
 async def analyze_portfolio(holdings: str = Form(...)):
     portfolio_analyzer = PortfolioAnalyzer()
     trading_advisor = TradingAdvisor()
-
     parsed_holdings = []
     for item in holdings.split(","):
         parts = item.strip().split(":")
@@ -115,10 +110,8 @@ async def analyze_portfolio(holdings: str = Form(...)):
                 "shares": int(parts[1]),
                 "cost": float(parts[2]),
             })
-
     if not parsed_holdings:
         return {"error": "Invalid format. Use: SYMBOL:SHARES:COST,SYMBOL:SHARES:COST"}
-
     analysis = portfolio_analyzer.analyze_portfolio(parsed_holdings)
     advice = trading_advisor.generate_advice(analysis)
     return {"analysis": analysis, "advice": advice}
